@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Annotated, Optional, List
-
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 from fastapi import UploadFile
 from fastapi import File
@@ -25,7 +25,15 @@ from app.database import SessionLocal
 app = FastAPI()
 from app.database import engine
 from app.models.candidates import Candidate
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # Candidate.metadata.create_all(bind=engine)
 @app.get("/db-test")
 def db_test():
@@ -256,14 +264,14 @@ def candidates():
             "name": row.name,
             "email": row.email,
             "location": row.location,
-            "experience": row.total_experience,
+            "total_experience": row.total_experience,
             "recent_job_title": row.recent_job_title,
             "skills": row.skills
         }
         for row in rows
     ]
     
-@app.post("/candidatesf/search")
+@app.post("/candidates/search")
 def search(filters: CandidateSearchRequest):
 
     candidates = search_candidates(
@@ -299,11 +307,12 @@ def candidate_detail(candidate_id: str):
         "name": candidate.name,
         "email": candidate.email,
         "phone": candidate.phone,
-        "linkedin": candidate.linkedin_url,
-        "github": candidate.github_url,
+        "linkedin_url": candidate.linkedin_url,
+        "github_url": candidate.github_url,
         "location": candidate.location,
-        "experience": candidate.total_experience,
+        "total_experience": candidate.total_experience,
         "recent_job_title": candidate.recent_job_title,
+        "resume_file_url": candidate.resume_file_url,
         "skills": candidate.skills
     }    
     

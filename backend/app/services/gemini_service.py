@@ -22,28 +22,44 @@ def extract_resume_details(
     prompt = f"""
 You are a resume parser.
 
-Extract:
+Extract the following fields:
 
 1. name (string)
-2. skills (array)
+2. skills (array of strings)
 3. total_years_experience (number)
-4. most_recent_job_title
-5. location
+4. most_recent_job_title (string - as written in resume)
+5. job_role (choose ONLY from predefined categories)
+6. location (string)
+
+IMPORTANT:
+job_role MUST be one of:
+
+- SOFTWARE_ENGINEER
+- BACKEND_ENGINEER
+- FRONTEND_ENGINEER
+- FULL_STACK_ENGINEER
+- AI_ENGINEER
+- DATA_SCIENTIST
+- DEVOPS_ENGINEER
+- MOBILE_ENGINEER
+- PRODUCT_MANAGER
+- OTHER
+
+If unsure → use "OTHER"
 
 Return ONLY valid JSON.
 
 Example:
-
 {{
   "name": "John Doe",
   "skills": ["Python", "AWS"],
   "total_years_experience": 3,
-  "most_recent_job_title": "Software Engineer",
+  "most_recent_job_title": "Full Stack AI Engineer",
+  "job_role": "AI_ENGINEER",
   "location": "Bangalore"
 }}
 
 Resume:
-
 {resume_text}
 """
 

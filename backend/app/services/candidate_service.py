@@ -36,7 +36,7 @@ def save_candidate(
 
             recent_job_title=
             ai_data.get(
-                "most_recent_job_title"
+                "job_role"
             ),
 
             skills=
@@ -89,80 +89,60 @@ from app.database import SessionLocal
 from app.models.candidates import Candidate
 
 
+from sqlalchemy import or_, and_
+
 def search_candidates(filters):
     db = SessionLocal()
 
     try:
         query = db.query(Candidate)
 
-        # Experience filter
+        conditions = []
+
+        # -------------------------
+        # EXPERIENCE
+        # -------------------------
         if filters.min_experience is not None:
-            query = query.filter(
+            conditions.append(
                 Candidate.total_experience >= filters.min_experience
             )
 
-        # Location filter
+        # -------------------------
+        # LOCATION FILTER (OR logic)
+        # -------------------------
         if filters.locations:
-
-            location_conditions = []
-
-            for location in filters.locations:
-                location_conditions.append(
-                    Candidate.location.ilike(
-                        f"%{location}%"
-                    )
+            conditions.append(
+                or_(
+                    *[
+                        Candidate.location.ilike(f"%{loc}%")
+                        for loc in filters.locations
+                    ]
                 )
-
-            query = query.filter(
-                or_(*location_conditions)
             )
 
-        # Job title filter
-        if filters.job_titles:
-
-            title_conditions = []
-
-            for title in filters.job_titles:
-                title_conditions.append(
-                    Candidate.recent_job_title.ilike(
-                        f"%{title}%"
-                    )
-                )
-
-            query = query.filter(
-                or_(*title_conditions)
+        # -------------------------
+        # JOB ROLE FILTER (NEW - CLEAN & CORRECT)
+        # -------------------------
+        if filters.job_role:
+            conditions.append(
+                Candidate.recent_job_title == filters.job_role
             )
 
-        candidates = query.all()
-
-        # Skills filter
+        # -------------------------
+        # SKILLS FILTER (ALL match)
+        # -------------------------
         if filters.skills:
+            conditions.append(
+                Candidate.skills.contains(filters.skills)
+            )
 
-            filtered_candidates = []
+        # -------------------------
+        # APPLY ALL CONDITIONS
+        # -------------------------
+        if conditions:
+            query = query.filter(and_(*conditions))
 
-            required_skills = {
-                skill.lower().strip()
-                for skill in filters.skills
-            }
-
-            for candidate in candidates:
-
-                candidate_skills = {
-                    skill.lower().strip()
-                    for skill in (candidate.skills or [])
-                }
-
-                # Candidate must have ALL requested skills
-                if required_skills.issubset(
-                    candidate_skills
-                ):
-                    filtered_candidates.append(
-                        candidate
-                    )
-
-            candidates = filtered_candidates
-
-        return candidates
+        return query.all()
 
     finally:
         db.close()
