@@ -1,9 +1,13 @@
 from app.database import SessionLocal
 from app.models.candidates import Candidate
+from sqlalchemy import and_
+from sqlalchemy import or_
+
 from app.database import SessionLocal
 from app.models.candidates import Candidate
-from sqlalchemy import and_
 
+
+from sqlalchemy import or_, and_
 def save_candidate(
     contact_info,
     ai_data,
@@ -82,14 +86,7 @@ def get_candidate_by_id(candidate_id):
         db.close()        
         
         
-        
-from sqlalchemy import or_
-
-from app.database import SessionLocal
-from app.models.candidates import Candidate
-
-
-from sqlalchemy import or_, and_
+    
 
 def search_candidates(filters):
     db = SessionLocal()
@@ -129,20 +126,49 @@ def search_candidates(filters):
             )
 
         # -------------------------
-        # SKILLS FILTER (ALL match)
+        # SKILLS FILTER (FIXED - OLD LOGIC RESTORED)
         # -------------------------
         if filters.skills:
-            conditions.append(
-                Candidate.skills.contains(filters.skills)
-            )
+
+            # We will NOT use SQL contains (it was incorrect)
+            # Instead we filter after DB query (same as your old logic)
+
+            pass  # handled after query
 
         # -------------------------
-        # APPLY ALL CONDITIONS
+        # APPLY ALL CONDITIONS (EXCEPT SKILLS)
         # -------------------------
         if conditions:
             query = query.filter(and_(*conditions))
 
-        return query.all()
+        candidates = query.all()
+
+        # -------------------------
+        # SKILLS FILTER (POST DB - RESTORED OLD BEHAVIOR)
+        # -------------------------
+        if filters.skills:
+
+            filtered_candidates = []
+
+            required_skills = {
+                skill.lower().strip()
+                for skill in filters.skills
+            }
+
+            for candidate in candidates:
+
+                candidate_skills = {
+                    skill.lower().strip()
+                    for skill in (candidate.skills or [])
+                }
+
+                # Candidate must have ALL requested skills
+                if required_skills.issubset(candidate_skills):
+                    filtered_candidates.append(candidate)
+
+            candidates = filtered_candidates
+
+        return candidates
 
     finally:
         db.close()

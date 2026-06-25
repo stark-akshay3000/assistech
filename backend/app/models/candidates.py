@@ -1,12 +1,5 @@
-from sqlalchemy import Column
-from sqlalchemy import String
-from sqlalchemy import Float
-from sqlalchemy import DateTime
-from sqlalchemy import Text
-
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.dialects.postgresql import JSONB
-
+from sqlalchemy import Column,Text, Float, DateTime,String
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from datetime import datetime
 import uuid
 
