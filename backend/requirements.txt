@@ -1,0 +1,18 @@
+pip install fastapi uvicorn python-multipart
+
+pip install sqlalchemy psycopg2-binary
+
+pip install python-docx pdfplumber pymupdf
+
+pip install google-generativeai
+
+pip install boto3
+
+pip install python-dotenv
+
+pip install pydantic-settings
+pip install python-multipart
+pip install pymupdf pdfplumber python-docx
+pip install google-generativeai python-dotenv
+pip install sqlalchemy psycopg2-binary
+pip install boto3
