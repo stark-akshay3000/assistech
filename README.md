@@ -37,7 +37,7 @@ Before running the project, ensure you have the following installed:
 ```text
 project/
 │
-├── .env.local                    # Backend environment variables
+├── .env                   # Backend environment variables
 ├── backend/
 │   ├── app/
 │   ├── requirements.txt
@@ -46,7 +46,7 @@ project/
 └── frontend/
     ├── src/
     ├── package.json
-    └── .env.local          # Frontend environment variables
+    └── .env          # Frontend environment variables
 ```
 
 ---
@@ -174,7 +174,7 @@ docker build -t techassist-backend .
 Run the Docker container:
 
 ```bash
-docker run -d -p 80:8000 --env-file ../.env techassist-backend
+docker run -d -p 8000:8000 --env-file ../.env techassist-backend
 
 ```
 
