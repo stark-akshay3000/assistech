@@ -1,18 +1,71 @@
 "use client";
 
 import { UploadCloud } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "../services/api";
 
 export default function UploadSection() {
   const [files, setFiles] = useState<FileList | null>(null);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [statusText, setStatusText] = useState("");
+
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function stopPolling() {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }
+
+  function pollProgress(jobId: string) {
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await api.get(`/progress/${jobId}`);
+        const data = res.data;
+
+        // Debug: open your browser console to see exactly what
+        // the backend returns on every poll tick.
+        console.log("[progress poll]", jobId, data);
+
+        if (!data || data.status === "not_found") {
+          setStatusText("Waiting for job to start...");
+          return;
+        }
+
+        setProgress(data.percentage ?? 0);
+
+        if (data.status === "completed") {
+          setStatusText("Processing complete");
+          stopPolling();
+        } else {
+          setStatusText(
+            `Processed ${data.completed + data.failed}/${data.total} files`
+          );
+        }
+      } catch (error: any) {
+        // Tells you immediately if it's a 404 (route prefix
+        // mismatch) vs a genuine server error.
+        console.error(
+          "progress poll failed:",
+          error?.response?.status,
+          error?.response?.data || error.message
+        );
+        setStatusText(
+          `Progress check failed (${error?.response?.status ?? "network error"})`
+        );
+      }
+    }, 1000);
+  }
 
   async function uploadFiles() {
     if (!files) return;
 
+    const jobId = crypto.randomUUID();
+
     const formData = new FormData();
+    formData.append("job_id", jobId);
 
     Array.from(files).forEach((file) => {
       formData.append("files", file);
@@ -21,19 +74,26 @@ export default function UploadSection() {
     try {
       setLoading(true);
       setProgress(0);
+      setStatusText("Uploading files...");
 
-      await api.post("/upload", formData, {
-        onUploadProgress: (event) => {
-          const percent = Math.round(
-            (event.loaded * 100) / (event.total || 1)
-          );
-          setProgress(percent);
-        },
-      });
+      // Start polling immediately — we already know the job_id,
+      // so we don't have to wait for the upload request to finish.
+      pollProgress(jobId);
 
-      alert("Upload Complete");
+      await api.post("/upload", formData);
+
+      // Let the bar actually land on 100% and stay visible for a
+      // beat before we hide it — otherwise it disappears the
+      // instant it reaches completion, which looks just as abrupt.
+      setProgress(100);
+      setStatusText("✅ All files processed successfully");
+      stopPolling();
+
+      await new Promise((resolve) => setTimeout(resolve, 800));
     } catch (error) {
       console.error(error);
+      setStatusText("Upload failed");
+      stopPolling();
     } finally {
       setLoading(false);
     }
@@ -104,7 +164,7 @@ export default function UploadSection() {
             disabled:cursor-not-allowed
           "
         >
-          {loading ? "Uploading..." : "Upload"}
+          {loading ? "Processing..." : "Upload"}
         </button>
 
         {loading && (
@@ -117,7 +177,7 @@ export default function UploadSection() {
             </div>
 
             <p className="mt-2 text-slate-300 text-sm">
-              {progress}% uploaded
+              {progress}% — {statusText}
             </p>
           </div>
         )}

@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Annotated, Optional, List
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
-from app.api import upload, candidates
+from app.api import upload, candidates , progress
 from app.database import engine,SessionLocal
 from app.models.candidates import Candidate
 app = FastAPI()
@@ -21,6 +21,7 @@ app.add_middleware(
 
 app.include_router(upload.router)
 app.include_router(candidates.router)
+app.include_router(progress.router)
 
 @app.get("/db-test")
 def db_test():
@@ -34,21 +35,4 @@ def root():
     }    
     
 
-    sample_resume = """
-    Senior Backend Engineer
-
-    Skills:
-    Python
-    FastAPI
-    Docker
-    AWS
-    Langchain and Langgraph , MLOPS
-
-    Bangalore
-
-    5 years experience
-    """
-
-    return extract_resume_details(
-        sample_resume
-    )
+   
