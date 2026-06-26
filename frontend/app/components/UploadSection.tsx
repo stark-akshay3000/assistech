@@ -1,103 +1,19 @@
 "use client";
 
-import { UploadCloud } from "lucide-react";
-import { useRef, useState } from "react";
-import { api } from "../services/api";
+import { UploadCloud, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { useUpload } from "../contexts/UploadContext";
 
 export default function UploadSection() {
-  const [files, setFiles] = useState<FileList | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [statusText, setStatusText] = useState("");
-
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  function stopPolling() {
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-  }
-
-  function pollProgress(jobId: string) {
-    pollRef.current = setInterval(async () => {
-      try {
-        const res = await api.get(`/progress/${jobId}`);
-        const data = res.data;
-
-        // Debug: open your browser console to see exactly what
-        // the backend returns on every poll tick.
-        console.log("[progress poll]", jobId, data);
-
-        if (!data || data.status === "not_found") {
-          setStatusText("Waiting for job to start...");
-          return;
-        }
-
-        setProgress(data.percentage ?? 0);
-
-        if (data.status === "completed") {
-          setStatusText("Processing complete");
-          stopPolling();
-        } else {
-          setStatusText(
-            `Processed ${data.completed + data.failed}/${data.total} files`
-          );
-        }
-      } catch (error: any) {
-        // Tells you immediately if it's a 404 (route prefix
-        // mismatch) vs a genuine server error.
-        console.error(
-          "progress poll failed:",
-          error?.response?.status,
-          error?.response?.data || error.message
-        );
-        setStatusText(
-          `Progress check failed (${error?.response?.status ?? "network error"})`
-        );
-      }
-    }, 1000);
-  }
-
-  async function uploadFiles() {
-    if (!files) return;
-
-    const jobId = crypto.randomUUID();
-
-    const formData = new FormData();
-    formData.append("job_id", jobId);
-
-    Array.from(files).forEach((file) => {
-      formData.append("files", file);
-    });
-
-    try {
-      setLoading(true);
-      setProgress(0);
-      setStatusText("Uploading files...");
-
-      // Start polling immediately — we already know the job_id,
-      // so we don't have to wait for the upload request to finish.
-      pollProgress(jobId);
-
-      await api.post("/upload", formData);
-
-      // Let the bar actually land on 100% and stay visible for a
-      // beat before we hide it — otherwise it disappears the
-      // instant it reaches completion, which looks just as abrupt.
-      setProgress(100);
-      setStatusText("✅ All files processed successfully");
-      stopPolling();
-
-      await new Promise((resolve) => setTimeout(resolve, 800));
-    } catch (error) {
-      console.error(error);
-      setStatusText("Upload failed");
-      stopPolling();
-    } finally {
-      setLoading(false);
-    }
-  }
+  const {
+    selectedFiles,
+    setSelectedFiles,
+    loading,
+    progress,
+    statusText,
+    result,
+    requestError,
+    startUpload,
+  } = useUpload();
 
   return (
     <div className="max-w-5xl mx-auto mt-12 px-4">
@@ -128,6 +44,7 @@ export default function UploadSection() {
           type="file"
           multiple
           accept=".pdf,.docx"
+          disabled={loading}
           className="
             mt-6
             block
@@ -143,12 +60,14 @@ export default function UploadSection() {
             file:text-white
             hover:file:bg-slate-700
             cursor-pointer
+            disabled:opacity-50
+            disabled:cursor-not-allowed
           "
-          onChange={(e) => setFiles(e.target.files)}
+          onChange={(e) => setSelectedFiles(e.target.files)}
         />
 
         <button
-          onClick={uploadFiles}
+          onClick={startUpload}
           disabled={loading}
           className="
             mt-6
@@ -179,6 +98,57 @@ export default function UploadSection() {
             <p className="mt-2 text-slate-300 text-sm">
               {progress}% — {statusText}
             </p>
+
+            <p className="mt-2 text-slate-500 text-xs">
+              You can switch tabs — this keeps running in the background.
+            </p>
+          </div>
+        )}
+
+        {!loading && requestError && (
+          <div className="mt-6 flex items-start gap-3 text-left bg-red-950/50 border border-red-800 rounded-xl p-4">
+            <AlertTriangle size={20} className="text-red-400 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-red-300 font-medium">Upload failed</p>
+              <p className="text-red-400/90 text-sm mt-1">{requestError}</p>
+            </div>
+          </div>
+        )}
+
+        {!loading && result && (
+          <div className="mt-6 text-left">
+            <p className="text-slate-300 text-sm mb-3">
+              {result.success_count}/{result.total_files} succeeded
+              {result.failed_count > 0 && `, ${result.failed_count} failed`}
+            </p>
+
+            <ul className="space-y-2">
+              {result.results.map((r, i) => (
+                <li
+                  key={i}
+                  className={`flex items-start gap-2 rounded-lg p-3 text-sm ${
+                    r.status === "success"
+                      ? "bg-emerald-950/40 border border-emerald-900"
+                      : "bg-red-950/40 border border-red-900"
+                  }`}
+                >
+                  {r.status === "success" ? (
+                    <CheckCircle2 size={16} className="text-emerald-400 mt-0.5 shrink-0" />
+                  ) : (
+                    <XCircle size={16} className="text-red-400 mt-0.5 shrink-0" />
+                  )}
+                  <div>
+                    <p className="text-slate-200 font-medium break-all">{r.filename}</p>
+                    {r.status === "failed" && (
+                      <p className="text-red-400/90 mt-0.5">
+                        {r.error_type ? `${r.error_type}: ` : ""}
+                        {r.error ?? "Unknown error"}
+                      </p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </div>
