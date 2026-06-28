@@ -138,10 +138,6 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
     }, 1000);
   }, []);
 
-  // On mount (i.e. whenever any page wraps itself in the provider's
-  // tree for the first time — which in practice is once, at app
-  // load, since the provider sits in layout.tsx), check if there
-  // was an upload in flight before a refresh and resume polling it.
   useEffect(() => {
     const existingJobId = sessionStorage.getItem(STORAGE_KEY);
     if (existingJobId) {
@@ -151,7 +147,6 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
     }
 
     return () => stopPolling();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startUpload = useCallback(async () => {
@@ -180,9 +175,6 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
       sessionStorage.setItem(STORAGE_KEY, jobId);
       sessionStorage.setItem(TOTAL_KEY, String(selectedFiles.length));
 
-      // Polling starts immediately and keeps running via the
-      // context-held interval even if the user navigates away —
-      // the provider lives above the router so it never unmounts.
       pollProgress(jobId);
 
       const response = await api.post("/upload", formData);

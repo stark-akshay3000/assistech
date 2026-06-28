@@ -322,8 +322,8 @@ async def upload_resumes(
                 {
                     "filename": file.filename,
                     "status": "failed",
-                    "error": str(e),          # <-- Added
-                    "error_type": type(e).__name__,   # <-- Added
+                    "error": str(e),          
+                    "error_type": type(e).__name__,   
                 }
             )
 

@@ -123,11 +123,32 @@ export default function SearchSection() {
         </div>
 
         {/* Buttons */}
-        <div className="flex gap-3 mt-5">
+        <div className="flex gap-4 mt-6">
 
           <button
             onClick={searchCandidates}
-            className="bg-white text-black px-6 py-2 rounded-lg"
+            className="
+              px-7
+              py-2.5
+              rounded-xl
+              bg-white
+              text-black
+              font-semibold
+              shadow-md
+              transition-all
+              duration-200
+              hover:bg-slate-200
+              hover:shadow-xl
+              hover:-translate-y-0.5
+              active:translate-y-0
+              active:scale-95
+              active:shadow-sm
+              focus:outline-none
+              focus:ring-2
+              focus:ring-white/50
+              cursor-pointer
+              select-none
+            "
           >
             Search
           </button>
@@ -140,7 +161,32 @@ export default function SearchSection() {
               setJobRole("");
               fetchCandidates();
             }}
-            className="border border-slate-700 px-6 py-2 rounded-lg"
+            className="
+              px-7
+              py-2.5
+              rounded-xl
+              bg-slate-800
+              border
+              border-slate-700
+              text-white
+              font-semibold
+              shadow-md
+              transition-all
+              duration-200
+              hover:bg-slate-700
+              hover:border-slate-500
+              hover:shadow-xl
+              hover:-translate-y-0.5
+              active:translate-y-0
+              active:scale-95
+              active:bg-slate-600
+              active:shadow-sm
+              focus:outline-none
+              focus:ring-2
+              focus:ring-slate-500
+              cursor-pointer
+              select-none
+            "
           >
             Reset
           </button>

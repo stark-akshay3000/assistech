@@ -33,7 +33,7 @@ export default function Navbar({
           font-bold
           text-white
         ">
-          Resume Search ATS
+          Talent Pool Search
         </h1>
 
         <div className="flex gap-3">

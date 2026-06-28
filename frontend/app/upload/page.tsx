@@ -37,8 +37,6 @@ export default function UploadPage() {
   const [result, setResult] =
     useState<UploadSummary | null>(null);
 
-  // Set when the request itself failed (network error, server 4xx/5xx,
-  // CORS, etc) — i.e. we never got a usable summary back.
   const [requestError, setRequestError] =
     useState<string | null>(null);
 
@@ -236,7 +234,6 @@ export default function UploadPage() {
 
       )}
 
-      {/* Request-level error: the upload call itself never succeeded */}
       {!loading && requestError && (
         <div className="mt-6 border border-red-300 bg-red-50 rounded p-4">
           <p className="text-red-700 font-semibold">Upload failed</p>
@@ -244,7 +241,6 @@ export default function UploadPage() {
         </div>
       )}
 
-      {/* Per-file results once the request completed */}
       {!loading && result && (
 
         <div className="mt-6">
